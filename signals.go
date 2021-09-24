@@ -2,7 +2,6 @@ package sig
 
 import (
 	"context"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -13,21 +12,25 @@ var defaultSignals = []os.Signal{
 	syscall.SIGTERM,
 }
 
-func New(sigs ...os.Signal) (context.Context, context.CancelFunc) {
+type Log func(s os.Signal)
+
+func New(log Log, sigs ...os.Signal) (context.Context, context.CancelFunc) {
 	ctx, cancel := context.WithCancel(context.Background())
-	Notify(cancel, sigs...)
+	Notify(cancel, log, sigs...)
 	return ctx, cancel
 }
 
-func Notify(cancelFunc context.CancelFunc, sigs ...os.Signal) {
+func Notify(cancelFunc context.CancelFunc, log Log, sigs ...os.Signal) {
 	go func() {
-		var signals = make(chan os.Signal)
 		if len(sigs) == 0 {
 			sigs = defaultSignals
 		}
+
+		signals := make(chan os.Signal)
 		signal.Notify(signals, sigs...)
+
 		sig := <-signals
+		log(sig)
 		cancelFunc()
-		log.Println(sig)
 	}()
 }
