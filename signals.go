@@ -30,7 +30,13 @@ func Notify(cancelFunc context.CancelFunc, log Log, sigs ...os.Signal) {
 		signal.Notify(signals, sigs...)
 
 		sig := <-signals
-		log(sig)
-		cancelFunc()
+
+		if cancelFunc != nil {
+			cancelFunc()
+		}
+
+		if log != nil {
+			log(sig)
+		}
 	}()
 }
